@@ -1,0 +1,20 @@
+# Compiled Object Files
+*.o
+
+# Helper manuals
+*.pdf
+*.ps
+*.html
+
+# Other files
+*.log
+*.out
+*.err
+Makefile.*
+
+# folders
+misc/
+
+# Compiled executable
+yshell
+
