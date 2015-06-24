@@ -1,7 +1,8 @@
 // $Id: commands.cpp,v 1.11 2014-06-11 13:49:31-07 - - $
-
+// MODIFY IT!
 #include "commands.h"
 #include "debug.h"
+#include <vector>
 
 commands::commands(): map ({
    {"cat"   , fn_cat   },
@@ -30,7 +31,7 @@ command_fn commands::at (const string& cmd) {
 
 
 void fn_cat (inode_state& state, const wordvec& words){
-   DEBUGF ('c', state);
+   DEBUGF ('c', state); 
    DEBUGF ('c', words);
 }
 
@@ -39,7 +40,19 @@ void fn_cd (inode_state& state, const wordvec& words){
    DEBUGF ('c', words);
 }
 
+/**
+ * Prints out the words given to the arguemnt
+ * @param state unused inode state
+ * @param words the command given to the 
+ */
 void fn_echo (inode_state& state, const wordvec& words){
+   // get our vector into local scope to manipulate it
+   wordvec tmp = words;
+   // erase the first element
+   tmp.erase(tmp.begin());
+   // print it to standard out
+   cout << tmp << endl;
+   // Debug stuff (Unused)
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 }
