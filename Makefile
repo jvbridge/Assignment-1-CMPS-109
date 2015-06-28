@@ -6,7 +6,8 @@ NOINCL      = ci clean spotless
 NEEDINCL    = ${filter ${NOINCL}, ${MAKECMDGOALS}}
 GMAKE       = ${MAKE} --no-print-directory
 
-COMPILECPP  = g++ -g -O0 -Wall -Wextra -rdynamic -std=gnu++11
+# note: removed -rdynamic since it was throwing errors
+COMPILECPP  = g++ -g -O0 -Wall -Wextra -std=gnu++11
 MAKEDEPCPP  = g++ -MM
 
 CPPSOURCE   = commands.cpp debug.cpp inode.cpp util.cpp main.cpp
@@ -53,4 +54,3 @@ again :
 ifeq (${NEEDINCL}, )
 include ${DEPFILE}
 endif
-
