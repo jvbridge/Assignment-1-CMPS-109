@@ -18,9 +18,15 @@ using namespace std;
 //    Options analysis:  The only option is -Dflags. 
 //
 
+/**
+ * Scans the options and sets flags as appropriate
+ * @param argc The number of arguments given to main
+ * @param argv The arguments given to main
+ */
 void scan_options (int argc, char** argv) {
-   opterr = 0;
+   opterr = 0; // count of all the options
    for (;;) {
+      // option is a 
       int option = getopt (argc, argv, "@:");
       if (option == EOF) break;
       switch (option) {
@@ -38,6 +44,24 @@ void scan_options (int argc, char** argv) {
    }
 }
 
+/**
+ * Helper function that checks if the line is commented
+ * @param  words  the command given
+ * @return        true if the line starts with "#" false otherwise
+ */
+bool check_comment(wordvec words){
+   string first_word = words.front();
+   char first_char = first_word.at(0);
+   if (first_char == ('#')){
+      DEBUGF('c', "Line is commented!")
+      return true;
+   } else {
+      DEBUGF('c', "Line is NOT commented!")
+      return false;
+   }
+}
+
+
 
 //
 // main -
@@ -45,6 +69,7 @@ void scan_options (int argc, char** argv) {
 //
 
 int main (int argc, char** argv) {
+   // 
    execname (argv[0]);
    cout << boolalpha; // Print false or true instead of 0 or 1.
    cerr << boolalpha;
@@ -75,6 +100,10 @@ int main (int argc, char** argv) {
             // function.  Complain or call it.
             wordvec words = split (line, " \t");
             DEBUGF ('y', "words = " << words);
+
+            // if the line is commented ignore it
+            if (check_comment(words)) continue;
+
             command_fn fn = cmdmap.at(words.at(0));
             fn (state, words);
          }catch (yshell_exn& exn) {
@@ -89,4 +118,3 @@ int main (int argc, char** argv) {
 
    return exit_status_message();
 }
-
