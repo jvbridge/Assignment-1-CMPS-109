@@ -18,6 +18,17 @@ commands::commands(): map ({
    {"rm"    , fn_rm    },
 }){}
 
+/**
+ * Helper function to pop off the command
+ * @param  words  a wordvec that consists of whole line
+ * @return        returns the first word of the command
+ */
+wordvec pop_command(wordvec words){
+   wordvec tmp = words;
+   tmp.erase(tmp.begin());
+   return tmp;
+}
+
 command_fn commands::at (const string& cmd) {
    // Note: value_type is pair<const key_type, mapped_type>
    // So: iterator->first is key_type (string)
@@ -28,10 +39,9 @@ command_fn commands::at (const string& cmd) {
    }
    return result->second;
 }
-
 
 void fn_cat (inode_state& state, const wordvec& words){
-   DEBUGF ('c', state); 
+   DEBUGF ('c', state);
    DEBUGF ('c', words);
 }
 
@@ -43,13 +53,11 @@ void fn_cd (inode_state& state, const wordvec& words){
 /**
  * Prints out the words given to the arguemnt
  * @param state unused inode state
- * @param words the command given to the 
+ * @param words the command given to the
  */
 void fn_echo (inode_state& state, const wordvec& words){
-   // get our vector into local scope to manipulate it
-   wordvec tmp = words;
-   // erase the first element
-   tmp.erase(tmp.begin());
+   // use helper function to delete unecessary words
+   wordvec tmp = pop_command(words);
    // print it to standard out
    cout << tmp << endl;
    // Debug stuff (Unused)
@@ -80,6 +88,7 @@ void fn_make (inode_state& state, const wordvec& words){
 }
 
 void fn_mkdir (inode_state& state, const wordvec& words){
+
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 }
@@ -109,4 +118,3 @@ int exit_status_message() {
    cout << execname() << ": exit(" << exit_status << ")" << endl;
    return exit_status;
 }
-
