@@ -5,16 +5,15 @@
 *.pdf
 *.ps
 *.html
+*.tt
 
 # Other files
 *.log
 *.out
 *.err
-Makefile.*
 
 # folders
 misc/
 
 # Compiled executable
 yshell
-
