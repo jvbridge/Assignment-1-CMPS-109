@@ -1,1 +1,17 @@
 A simulated shell for education purposes and learning C++
+
+Most of the code was provided by the instructor and then modified as
+part of the assignment.
+
+Changes made:
+
+main.cpp:
+   added a helper function that checks to see if the current command was
+   commented, executed on every command before any of the functions are
+   called.
+
+inode.cpp:
+   TODO
+
+commands.cpp:
+   TODO
