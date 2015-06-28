@@ -16,6 +16,7 @@ commands::commands(): map ({
    {"prompt", fn_prompt},
    {"pwd"   , fn_pwd   },
    {"rm"    , fn_rm    },
+   {"quit"  , fn_exit  }, // added my own little "alias" that I use
 }){}
 
 /**
@@ -24,8 +25,12 @@ commands::commands(): map ({
  * @return        returns the first word of the command
  */
 wordvec pop_command(wordvec words){
+   DEBUGF('c', "running pop_command");
    wordvec tmp = words;
+   DEBUGF('c', "tmp = " << tmp);
    tmp.erase(tmp.begin());
+   DEBUGF('c', "tmp modified, tmp = " << tmp);
+   DEBUGF('c', "words = " << words);
    return tmp;
 }
 
@@ -56,18 +61,44 @@ void fn_cd (inode_state& state, const wordvec& words){
  * @param words the command given to the
  */
 void fn_echo (inode_state& state, const wordvec& words){
-   // use helper function to delete unecessary words
-   wordvec tmp = pop_command(words);
-   // print it to standard out
-   cout << tmp << endl;
    // Debug stuff (Unused)
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   // use helper function to delete unecessary words
+   wordvec tmp = pop_command(words);
+
+   // print it to standard out
+   cout << tmp << endl;
 }
 
+/**
+ * Exits the program with the error
+ * @param state [description]
+ * @param words [description]
+ */
 void fn_exit (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   // if exit is the only word on the line, exit just like that
+   if (words.size() == 1){
+      DEBUGF('c', "EXITING! No arguments given");
+      throw ysh_exit_exn();
+   }
+
+   /*
+   otherwise we are given an exit status to set and should interpret
+   it properly. A try/catch block is used here to make sure it's valid
+    */
+   try {
+      // convert the argument is a string, interperet it as an int
+      int exit_code = stoi(words.at(1));
+      exit_status::set(exit_code);
+   } catch (std::invalid_argument& e){
+      // if invalid argument is given, exit with status 127
+      exit_status::set(127);
+   }
    throw ysh_exit_exn();
 }
 
