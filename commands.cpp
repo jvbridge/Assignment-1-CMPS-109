@@ -74,8 +74,8 @@ void fn_echo (inode_state& state, const wordvec& words){
 
 /**
  * Exits the program with the error
- * @param state [description]
- * @param words [description]
+ * @param state the state of the current inode
+ * @param words the command given
  */
 void fn_exit (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
