@@ -78,3 +78,20 @@ ostream& operator<< (ostream& out, const inode_state& state) {
    return out;
 }
 
+// MY FUNCTIONS =======================================================
+/**
+ * setter for the shell's prompt
+ * @param new_prompt a string that will be the new prompt. Will
+ * automatically have a space appended to it.
+ */
+void inode_state::set_prompt(const string& new_prompt){
+   this->prompt = new_prompt;
+};
+
+/**
+ * getter for the shell's prompt
+ * @return a string for the prompt
+ */
+const string& inode_state::get_prompt(){
+   return this->prompt;
+}

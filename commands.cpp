@@ -19,6 +19,7 @@ commands::commands(): map ({
    {"quit"  , fn_exit  }, // added my own little "alias" that I use
 }){}
 
+// HELPER FUNCTIONS ====================================================
 /**
  * Helper function to pop off the command
  * @param  words  a wordvec that consists of whole line
@@ -34,6 +35,15 @@ wordvec pop_command(wordvec words){
    return tmp;
 }
 
+/**
+ * Parses a string into an array of folder names
+ * @param path String that describes the path
+ */
+string parse_path(string path){
+   // TODO
+   return path;
+}
+
 command_fn commands::at (const string& cmd) {
    // Note: value_type is pair<const key_type, mapped_type>
    // So: iterator->first is key_type (string)
@@ -45,9 +55,28 @@ command_fn commands::at (const string& cmd) {
    return result->second;
 }
 
+/**
+ * The contents of each file is copied to stdout. An error is reported
+ * if no files are specified, a file does not exist, or there is no
+ * directory.
+ */
 void fn_cat (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   // if no arguments are given,  print an error and return
+   if (words.size() == 1){
+      cout << "Error: no arguments given to cat" << endl;
+      return;
+   }
+
+   // iterate through the commands and print out the contents
+   // this essentially hands off the code to the inode state
+   /*for (int i = 1; i < words.size(); i++){
+         String path = words.at(i);
+         cout << state.readfile(path) << endl;
+   }*/
+
 }
 
 void fn_cd (inode_state& state, const wordvec& words){
@@ -125,6 +154,18 @@ void fn_mkdir (inode_state& state, const wordvec& words){
 }
 
 void fn_prompt (inode_state& state, const wordvec& words){
+   // allocate new string
+   string new_prompt;
+
+   // set the string to be the correct one, starts at 1 since the first
+   // word is "prompt"
+   for ( unsigned i = 1; i != words.size(); i++ ) {
+      new_prompt = new_prompt + words.at(i) + " ";
+   }
+   DEBUGF('c', "New prompt is: " << new_prompt);
+   // use the inode state to set the prompt
+   state.set_prompt(new_prompt);
+
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 }

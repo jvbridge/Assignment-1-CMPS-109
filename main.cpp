@@ -15,7 +15,7 @@ using namespace std;
 
 //
 // scan_options
-//    Options analysis:  The only option is -Dflags. 
+//    Options analysis:  The only option is -Dflags.
 //
 
 /**
@@ -26,7 +26,7 @@ using namespace std;
 void scan_options (int argc, char** argv) {
    opterr = 0; // count of all the options
    for (;;) {
-      // option is a 
+      // option is a
       int option = getopt (argc, argv, "@:");
       if (option == EOF) break;
       switch (option) {
@@ -69,7 +69,7 @@ bool check_comment(wordvec words){
 //
 
 int main (int argc, char** argv) {
-   // 
+   //
    execname (argv[0]);
    cout << boolalpha; // Print false or true instead of 0 or 1.
    cerr << boolalpha;
@@ -77,15 +77,15 @@ int main (int argc, char** argv) {
    scan_options (argc, argv);
    bool need_echo = want_echo();
    commands cmdmap;
-   string prompt = "%";
+   //string prompt = "%";
    inode_state state;
    try {
       for (;;) {
          try {
-   
+
             // Read a line, break at EOF, and echo print the prompt
             // if one is needed.
-            cout << prompt << " ";
+            cout << state.get_prompt();
             string line;
             getline (cin, line);
             if (cin.eof()) {
@@ -95,7 +95,7 @@ int main (int argc, char** argv) {
                break;
             }
             if (need_echo) cout << line << endl;
-   
+
             // Split the line into words and lookup the appropriate
             // function.  Complain or call it.
             wordvec words = split (line, " \t");
