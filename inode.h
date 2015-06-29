@@ -159,6 +159,9 @@ class directory: public file_base {
       void remove (const string& filename);
       inode& mkdir (const string& dirname);
       inode& mkfile (const string& filename);
+      // my functions
+      void set_dotdot(inode_ptr parent);
+      void set_dot(inode_ptr dot);
 };
 
 #endif
