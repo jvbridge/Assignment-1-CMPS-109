@@ -53,10 +53,10 @@ bool check_comment(wordvec words){
    string first_word = words.front();
    char first_char = first_word.at(0);
    if (first_char == ('#')){
-      DEBUGF('c', "Line is commented!")
+      DEBUGF('m', "Line is commented!")
       return true;
    } else {
-      DEBUGF('c', "Line is NOT commented!")
+      DEBUGF('m', "Line is NOT commented!")
       return false;
    }
 }
