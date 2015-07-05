@@ -54,6 +54,9 @@ class inode_state {
 
       // getters
       const string& get_prompt();
+      inode_ptr get_cwd();
+      inode_ptr get_root();
+      string get_path();
 };
 
 
@@ -80,9 +83,18 @@ class inode {
       int inode_nr;
       inode_t type;
       file_base_ptr contents;
+      const string name;
+      inode_ptr parent {nullptr};
    public:
-      inode (inode_t init_type);
+      // constructor
+      inode (inode_t init_type, string init_name,
+         inode_ptr init_parent);
+
+      // getters
       int get_inode_nr() const;
+      string get_path(inode_state& state);
+      string get_name();
+      inode_ptr get_parent();
 };
 
 //

@@ -10,8 +10,10 @@ using namespace std;
 
 int inode::next_inode_nr {1};
 
-inode::inode(inode_t init_type):
-   inode_nr (next_inode_nr++), type (init_type)
+inode::inode(inode_t init_type, string init_name,
+   inode_ptr init_parent):
+   inode_nr (next_inode_nr++), type (init_type), name (init_name),
+   parent (init_parent)
 {
    switch (type) {
       case PLAIN_INODE:
@@ -72,11 +74,13 @@ void directory::remove (const string& filename) {
  * working directory to be appropriate for the start.
  */
 inode_state::inode_state() {
-   // set the root to be a pointer to the inode, specify the enum.
-   this->root = make_shared<inode>(DIR_INODE);
+   // set the root to be a pointer to the inode, and make the inode
+   // for it
+   this->root = make_shared<inode>(DIR_INODE, "", this->root);
 
-   directory_ptr_of(root->contents)->set_dot(root);
-   directory_ptr_of(root->contents)->set_dotdot(root);
+   // setting the root's parent manually because we couldn't set it in
+   // the constructor
+   this->root->parent = this->root;
 
    // set the current working directory to be the root
    this->cwd = root;
@@ -92,6 +96,54 @@ ostream& operator<< (ostream& out, const inode_state& state) {
 }
 
 // MY FUNCTIONS =======================================================
+// INODE
+
+/**
+ * returns the string of the whole path. Works by taking the inode and
+ * getting parents the whole way up.
+ * @param state the current inode state. Necessary to get the root.
+ * @return a string of the current directory.
+ */
+string inode::get_path(inode_state& state){
+   // make the reference for the first iterations
+   inode_ptr curr_dir = this->get_parent();
+
+   // string to return
+   string ret = this->get_name();
+
+   // itarating loop. Note: could be a for loop, decided that looked
+   // ugly though
+   while(curr_dir != state.get_root()){
+      DEBUGF('i', "parent is not root! continueing");
+      ret = curr_dir->get_name() + "/" + ret;
+      DEBUGF('i', "curent path:" + ret);
+      curr_dir = curr_dir->get_parent();
+   }
+   // adding the last / for the root directory
+   ret = "/" + ret;
+   DEBUGF('i', "Path is: " + ret);
+   return ret; // finally returning it
+}
+
+/**
+ * Simple getter for the name of the inode
+ * @return the inode's name
+ */
+string inode::get_name(){
+   DEBUGF ('i', "Getting the name of inode: " + this->name);
+   return this->name;
+}
+
+/**
+ * simple getter for the parent of the inode. Always returns an inode
+ * of type directory
+ * @return an inode pointer to the parent of the inode. The parent of
+ * the root directory is itself
+ */
+inode_ptr inode::get_parent(){
+   DEBUGF('i', "Getting the parent");
+   return this->parent;
+}
 
 // INODE state ========================================================
 /**
@@ -108,7 +160,37 @@ void inode_state::set_prompt(const string& new_prompt){
  * @return a string for the prompt
  */
 const string& inode_state::get_prompt(){
+   DEBUGF ('i', "prompt = " + this->prompt);
    return this->prompt;
+}
+
+/**
+ * Getter for the current working direcotry of the shell through the
+ * state
+ * @return inode pointer to the current working direcotry
+ */
+inode_ptr inode_state::get_cwd(){
+   DEBUGF ('i', "getting current working directory");
+   return this->cwd;
+}
+
+/**
+ * returns the root of the file structure
+ * @return an inode pointer pointing at the root of the file structure
+ */
+inode_ptr inode_state::get_root(){
+   DEBUGF ('i', "getting root");
+   return this->root;
+}
+
+/**
+ * Simple getter for the path of the current inode. Really extra, but
+ * there just in case.
+ * @return a string that represents the current path
+ */
+string inode_state::get_path(){
+   DEBUGF('i', "getting path from cwd");
+   return this->cwd->get_path(*this); // TODO: ask why * is required
 }
 
 // directory ==========================================================

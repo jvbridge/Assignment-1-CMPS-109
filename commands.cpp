@@ -171,6 +171,9 @@ void fn_prompt (inode_state& state, const wordvec& words){
 }
 
 void fn_pwd (inode_state& state, const wordvec& words){
+
+   cout << state.get_path() << endl;
+
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 }
