@@ -21,28 +21,114 @@ commands::commands(): map ({
 
 // HELPER FUNCTIONS ====================================================
 /**
- * Helper function to pop off the command
+ * Helper function to pop off the command from a wordvec given
  * @param  words  a wordvec that consists of whole line
  * @return        returns the first word of the command
  */
 wordvec pop_command(wordvec words){
-   DEBUGF('c', "running pop_command");
    wordvec tmp = words;
-   DEBUGF('c', "tmp = " << tmp);
    tmp.erase(tmp.begin());
-   DEBUGF('c', "tmp modified, tmp = " << tmp);
-   DEBUGF('c', "words = " << words);
+   DEBUGF('c', "commandless words: " << tmp);
    return tmp;
 }
 
+
 /**
- * Parses a string into an array of folder names
- * @param path String that describes the path
+ * Parses a path string into a vector of folder names
+ * @param path wordvec of all the folder names in the path
  */
-string parse_path(string path){
-   // TODO
-   return path;
+wordvec parse_path(string path){
+   // wordvec to return
+   wordvec ret;
+
+   // temp string to manipulate
+   string tmp = path;
+
+   // iterate over the string to parse the slashes out
+   while (tmp != ""){
+
+      size_t pos = tmp.find("/");
+      DEBUGF('c', "pos = " << pos);
+
+      // if the first slash is root, add an empty string to signify it
+      if (pos == 0){
+         ret.push_back("");
+         tmp.erase(0, 1);
+         continue;
+      }
+
+      // if there are no slashes in the path, we are done
+      if (pos >= tmp.size() - 1) {
+         ret.push_back(tmp);
+         break;
+      };
+
+      // otherwise pop off a directory, and erase it and continue
+      string dir = tmp.substr (0, pos);
+      ret.push_back(dir);
+      tmp.erase(0, pos + 1);
+      DEBUGF('c', "curr dir =  " << dir);
+      DEBUGF('c', "new pos = " << tmp.find("/"));
+   }
+   // finally return the wordvec
+   return ret;
 }
+
+/**
+ * Helper function that returns if the directory exists
+ * @param  curr_dir       [description]
+ * @param  path_from_curr [description]
+ * @return                [description]
+ */
+bool directory_exists(inode_ptr& curr_dir, string path_from_curr){
+   wordvec dir_path = parse_path(path_from_curr);
+
+   return false;
+}
+
+/**
+ * Helper function for fn_mkdir. Makes a directory of the given path
+ * @param path the string describing the path
+ * @param state the current inode state. Necesary to get current working
+ * directory or the root.
+ */
+void make_directory(string path, inode_state& state){
+   // an inode pointer that will point to the level of the path
+   inode_ptr curr_level;
+
+   // parse the directories into a word vector
+   wordvec dirs = parse_path(path);
+   DEBUGF ('c', "dirs is " << dirs);
+
+   // if the path begins with a slash, we need a top level directory
+   if (path.find("/") == 0){
+      curr_level = state.get_root();
+      DEBUGF ('c', "top level is root");
+      // the first entry is an empty string to signify root. Pop it off
+      // to prevent logic errors
+      dirs.erase(dirs.begin());
+   } else {
+      curr_level = state.get_cwd();
+      DEBUGF ('c', "top level is cwd");
+   }
+
+   // check if directory already exists
+   if (directory_exists(curr_level, path)){
+      cout << "Error: path " << path << " already exists" << endl;
+      return;
+   }
+
+   // iterate through the paths and make the directories
+   for(auto it = dirs.begin(); it < dirs.end(); it++){
+
+      // make the directory with make shared
+      inode_ptr new_dir = make_shared<inode>(DIR_INODE,
+          *it, curr_level);
+      curr_level = new_dir;
+   }
+}
+
+
 
 command_fn commands::at (const string& cmd) {
    // Note: value_type is pair<const key_type, mapped_type>
@@ -149,6 +235,25 @@ void fn_make (inode_state& state, const wordvec& words){
 
 void fn_mkdir (inode_state& state, const wordvec& words){
 
+   // if there are no arguments return an error.
+   if (words.size() == 1){
+      cout << "mkdir: missing operand" << endl;
+      return;
+   }
+
+   // pop off the command
+   wordvec dirs = pop_command(words);
+
+   // iterate over directories given and hand off the work to the
+   // helper functions
+   for (auto it = dirs.begin(); it != dirs.end(); it++){
+
+      // check if the path already exists TODO
+
+      // actually make the directory with the helper function
+      make_directory(*it, state);
+   }
+
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 }
@@ -171,7 +276,8 @@ void fn_prompt (inode_state& state, const wordvec& words){
 }
 
 void fn_pwd (inode_state& state, const wordvec& words){
-
+   // hand off all heavy lifting to inode.cpp beacuse that's where the
+   // real logic should take place
    cout << state.get_path() << endl;
 
    DEBUGF ('c', state);

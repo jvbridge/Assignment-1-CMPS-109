@@ -95,6 +95,7 @@ class inode {
       string get_path(inode_state& state);
       string get_name();
       inode_ptr get_parent();
+      file_base_ptr get_contents();
 };
 
 //
@@ -174,6 +175,8 @@ class directory: public file_base {
       // my functions
       void set_dotdot(inode_ptr parent);
       void set_dot(inode_ptr dot);
+      bool has(const string& name);
+
 };
 
 #endif

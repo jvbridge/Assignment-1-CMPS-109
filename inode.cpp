@@ -99,6 +99,14 @@ ostream& operator<< (ostream& out, const inode_state& state) {
 // INODE
 
 /**
+ * Returnt the contents of the inode
+ * @return file_base_ptr refering to the contents
+ */
+file_base_ptr inode::get_contents(){
+   return this->contents;
+}
+
+/**
  * returns the string of the whole path. Works by taking the inode and
  * getting parents the whole way up.
  * @param state the current inode state. Necessary to get the root.
@@ -194,6 +202,41 @@ string inode_state::get_path(){
 }
 
 // directory ==========================================================
+
+/**
+ * Makes a directory in the
+ * @pre  directory name must not already exist in parent directory
+ * @param  dirname the name of the new directory
+ * @return          a reference to the new directorie's inode
+ */
+inode& directory::mkdir(const string& name){
+   // check if it has the name
+   if (this->has(name)){
+      cout << "Error: " + name + "already exists" << endl;
+      auto pair = this->dirents.find(name);
+      inode* ret = pair->second.get();
+      return *ret; // TODO Ask why
+   }
+
+   // get a reference for the parent
+   inode_ptr dir_parent = dirents.at(".");
+
+   // make the new directory
+   inode_ptr new_dir = make_shared<inode>(DIR_INODE, name, dir_parent);
+
+   // get a reference to make the line length better
+   directory_ptr new_directory;
+   new_directory = directory_ptr_of(new_dir->get_contents());
+
+   // set the "." entry
+   new_directory->set_dot(new_dir);
+   // set the ".." entry
+   new_directory->set_dotdot(dir_parent);
+
+   // return the finished directory
+   return *new_dir; // TODO ask why star!
+}
+
 /**
  * Setter for the parent of a director
  * @param parent inode pointer pointing to the parent of the directory
@@ -223,4 +266,12 @@ void directory::set_dot(inode_ptr dot){
    else {
       dirents.at(".") = dot;
    }
+}
+
+bool directory::has(const string& name){
+   if (dirents.find(name) == dirents.end()){
+      // there is no directory of that name.
+      return false;
+   }
+   return true;
 }
