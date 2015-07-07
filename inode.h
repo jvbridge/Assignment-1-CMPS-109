@@ -114,6 +114,7 @@ class inode {
       string list_info();
 
       // plain file specific
+      inode_ptr make_plain(string& file_name);
 };
 
 //
@@ -160,6 +161,7 @@ class plain_file: public file_base {
       size_t size() const override;
       const wordvec& readfile() const;
       void writefile (const wordvec& newdata);
+      int get_size();
 };
 
 //
@@ -189,7 +191,7 @@ class directory: public file_base {
       size_t size() const override;
       void remove (const string& filename);
       inode_ptr mkdir (const string& dirname);
-      inode& mkfile (const string& filename);
+      inode_ptr mkfile (const string& filename);
       // my functions
       void set_dotdot(inode_ptr parent);
       void set_dot(inode_ptr dot);

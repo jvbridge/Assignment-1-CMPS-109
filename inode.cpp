@@ -46,17 +46,30 @@ directory_ptr directory_ptr_of (file_base_ptr ptr) {
 
 
 size_t plain_file::size() const {
-   size_t size {0};
+   size_t size = this->data.size();
    DEBUGF ('i', "size = " << size);
    return size;
 }
 
+
+int plain_file::get_size(){
+   return data.size();
+}
+
+
 const wordvec& plain_file::readfile() const {
-   DEBUGF ('i', data);
-   return data;
+   // wordvec ret_data;
+   //
+   // for(auto it = this->data.begin(); it != this->data.end(); it++){
+   //    ret.push_back
+   // }
+   //
+   // DEBUGF ('i', ret_data);
+   return this->data;
 }
 
 void plain_file::writefile (const wordvec& words) {
+   this->data = words;
    DEBUGF ('i', words);
 }
 
@@ -190,7 +203,9 @@ int inode::get_size(){
    }
 
    if (this->type == PLAIN_INODE){
-      return 1;
+      plain_file_ptr this_plain =
+         plain_file_ptr_of(this->get_contents());
+      return this_plain->get_size();
    }
 
    return 0;
@@ -222,6 +237,11 @@ inode_ptr inode::make_directory(string& directory_name){
       // TODO error handling
    }
    return dir_ptr->mkdir(directory_name);
+}
+
+inode_ptr inode::make_plain(string& file_name){
+   directory_ptr this_dir = directory_ptr_of(this->get_contents());
+   return this_dir->mkfile (file_name);
 }
 
 /**
@@ -398,13 +418,33 @@ inode_ptr directory::mkdir(const string& name){
    // set the ".." entry
    new_directory->set_dotdot(dir_parent);
 
-   //pair<string, inode_ptr> new_entry = std::make_pair(name, new_dir);
    this->dirents[name] = new_dir;
 
    // return the finished directory
    return new_dir; // TODO ask why star!
 }
 
+inode_ptr directory::mkfile(const string& name){
+
+   DEBUGF('f', "Making file: " + name);
+   if (this->has(name)){
+      cout << "Error: " + name + " already exists" << endl;
+      auto pair = this->dirents.find(name);
+      inode_ptr ret = pair->second;
+      return ret;
+   }
+
+   // get a reference for the parent
+   inode_ptr dir_parent = dirents.at(".");
+
+   // make the new directory
+   inode_ptr file = make_shared<inode>(PLAIN_INODE, name, dir_parent);
+
+   this->dirents[name] = file;
+
+   return file;
+
+}
 /**
  * Setter for the parent of a director
  * @param parent inode pointer pointing to the parent of the directory
@@ -517,3 +557,5 @@ void directory::list_recursive(){
       it->second->list_recursive();
    }
 }
+
+// PLAIN FILE ==========================================================

@@ -515,6 +515,13 @@ void fn_lsr (inode_state& state, const wordvec& words){
    }
 }
 
+string wordvec_to_path(wordvec convert){
+   string ret = "";
+   for (auto it = convert.begin(); it != convert.end(); it++){
+      ret = ret + "/" + (*it);
+   }
+   return ret;
+}
 
 void fn_make (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
@@ -525,20 +532,64 @@ void fn_make (inode_state& state, const wordvec& words){
       return;
    }
 
-   wordvec paths = pop_command(words);
+   string path = pop_command(words).at(0);
 
-   for (auto it = paths.begin(); it < paths.end(); it++){
-      // get the full path of the state
-      wordvec full_path = get_full_path(*it, state);
+   DEBUGF('f', "Path: " + path);
 
-      if (full_path_exists(full_path, state.get_root())){
-         inode_ptr start = find_inode( *it, state);
-         //start->list_recursive();
-      } else{
-         cout << "error: " << *it << " does not exist" << endl;
-      }
+   wordvec contents = pop_command(words);
+
+   DEBUGF('f', "Contents: " << contents);
+
+   wordvec vec_path = get_full_path(path, state);
+
+   DEBUGF('f', "vec_path: " << vec_path);
+
+   string filename = vec_path.back();
+
+   vec_path.pop_back();
+
+   if (full_path_exists(vec_path, state.get_root())){
+
+      DEBUGF('f', "Path registered as existing");
+
+      string pth = wordvec_to_path(vec_path);
+
+      inode_ptr plain_place = find_inode( pth, state);
+
+      plain_place->make_plain(filename);
+   } else{
+      cout << "error: " << vec_path << " does not exist" << endl;
    }
 
+   //
+   // for (auto it = paths.begin(); it != paths.end(); it++){
+   //    string curr_path = *it;
+   //    DEBUGF('f', "File path: " << curr_path);
+   //
+   //    // get the full path of the state
+   //    wordvec full_path = get_full_path(*it, state);
+   //
+   //    DEBUGF('f', "Full path: " << full_path);
+   //
+   //    // pop off the end since it's not a directory and add it
+   //    string file_name = full_path.back();
+   //    DEBUGF('f', "Making file: " + file_name);
+   //    full_path.pop_back();
+   //
+   //    DEBUGF('f', "Final path: " << full_path);
+   //
+   //    if (full_path_exists(full_path, state.get_root())){
+   //
+   //       DEBUGF('f', "Path registered as existing");
+   //
+   //       string pth = wordvec_to_path(full_path);
+   //       inode_ptr plain_place = find_inode( pth, state);
+   //
+   //       plain_place->make_plain(file_name);
+   //    } else{
+   //       cout << "error: " << full_path << " does not exist" << endl;
+   //    }
+   // }
 }
 
 void fn_mkdir (inode_state& state, const wordvec& words){
