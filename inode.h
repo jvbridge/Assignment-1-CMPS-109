@@ -53,7 +53,7 @@ class inode_state {
 
       // setters
       void set_prompt(const string& new_prompt);
-      void set_cwd(wordvec path);
+      void set_cwd(inode_ptr new_cwd);
 
       // getters
       const string& get_prompt();
@@ -106,6 +106,8 @@ class inode {
       // directory specific
       inode_ptr make_directory(string& directory_name);
       wordvec get_dir_list();
+      bool has_child(string dir_name);
+      inode_ptr get_child(string dir_name);
 
       // plain file specific
 };
@@ -189,6 +191,7 @@ class directory: public file_base {
       void set_dot(inode_ptr dot);
       bool has(const string& name);
       wordvec get_dir_list();
+      inode_ptr get_child(string child_name);
 };
 
 #endif

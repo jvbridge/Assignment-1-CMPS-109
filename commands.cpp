@@ -112,6 +112,39 @@ wordvec get_path_from_root(inode_ptr node, inode_ptr root){
 }
 
 /**
+ * Get an inode pointer to any point in the directory tree by giving it
+ * a path from root
+ * @param  path complete path from root. If it's a string run
+ *              parse path first
+ * @pre         if the path doesn't exist throw a runtime error
+ * @return      the complete path
+ */
+inode_ptr get_ptr_to_dir(wordvec path, inode_ptr root){
+   if (path.at(0) != ""){
+      throw runtime_error("path does not begin at root");
+   }
+
+   wordvec new_path = pop_command(path);
+
+   inode_ptr curr_dir = root;
+
+   for (auto it = new_path.begin(); it < new_path.end(); it++){
+      curr_dir = curr_dir->get_child(*it);
+   }
+   return curr_dir;
+}
+
+/**
+ * helper function that returns the child of the given directory
+ * @param  dir        the directory that you're looking for a child of
+ * @param  child_name the name of the child node
+ * @return            inode_ptr to the child
+ */
+inode_ptr get_child(inode_ptr dir, string child_name){
+   return dir->get_child(child_name);
+}
+
+/**
  * helper function that returns true if the dir has, false if it
  * does not
  * @param  path A string representing a path
@@ -119,13 +152,107 @@ wordvec get_path_from_root(inode_ptr node, inode_ptr root){
  * false otherwise
  */
 bool dir_has_child(inode_ptr dir, string name){
-   // TODO
-   //
+   return dir->has_child(name);
+}
 
-   inode_ptr warning_ender = dir;
-   string warning_stopper = name;
+/**
+ * Checks if the path is a valid one from the root
+ * @param  path_from_root wordvec containing the complete path
+ * @return                true if the path exists, false otherwise
+ */
+bool full_path_exists(wordvec path_from_root, inode_ptr root){
+   if (path_from_root.at(0) != ""){
+      throw runtime_error("path does not begin at root");
+   }
 
+   inode_ptr curr_dir = root;
+   wordvec curr_path = pop_command(path_from_root);
+
+   for (auto it = curr_path.begin(); it < curr_path.end(); it++){
+      if (curr_dir->get_type() == PLAIN_INODE ){
+         if(it != curr_path.end()){
+            return false;
+         } else {
+            return true;
+         };
+      }
+
+      if (!dir_has_child(curr_dir, *it)) return false;
+      curr_dir = get_child(curr_dir, *it);
+
+   }
    return true;
+}
+
+/**
+ * changes an arguement into a full path. Does not check if it's a valid
+ * path
+ * @param  path  [description]
+ * @param  state [description]
+ * @return       [description]
+ */
+wordvec get_full_path(string path, inode_state& state){
+
+   wordvec dirs = parse_path(path);
+
+   inode_ptr root = state.get_root();
+
+   inode_ptr cwd = state.get_cwd();
+
+   inode_ptr curr_level;
+
+   wordvec full_path;
+
+   if (path.find("/") == 0){
+
+      // the first entry is an empty string to signify root.
+      DEBUGF ('d', "top level is root");
+
+      return dirs;
+
+   } else if (path.find("..") == 0){
+      // erase first entry for logic
+      curr_level = cwd->get_parent();
+      dirs.erase(dirs.begin());
+
+   } else if (path.find(".") == 0){
+      // erase first entry for logic
+      curr_level = cwd;
+      dirs.erase(dirs.begin());
+   } else {
+      curr_level = cwd;
+   }
+
+   wordvec front_path = get_path_from_root(curr_level, root);
+   // preallocate memory
+   // Note: modified from code found on stack overflow
+   full_path.reserve(front_path.size() + dirs.size());
+
+   full_path.insert( full_path.end(), front_path.begin(),
+      front_path.end());
+
+   full_path.insert(full_path.end(), dirs.begin(), dirs.end());
+
+   return full_path;
+}
+
+
+/**
+ * magically finds an inode from the state and a path given
+ * @param  path  string input from the user for the path
+ * @param  state current inode state
+ * @pre          inode must exist
+ * @return       a pointer to the inode
+ */
+inode_ptr find_inode(string path, inode_state& state){
+   wordvec full_path = get_full_path(path, state);
+
+   inode_ptr root = state.get_root();
+
+   if (full_path_exists(full_path, root)){
+      return get_ptr_to_dir(full_path, root);
+   }
+   throw runtime_error("path doesn't exist");
 }
 
 /**
@@ -276,9 +403,26 @@ void fn_cd (inode_state& state, const wordvec& words){
    // parse the path with helper function
    wordvec dir_list = parse_path(path);
 
+   inode_ptr destination;
    // set the current directory to the parsed path by handing the
    // function off to inode.cpp
-   state.set_cwd(dir_list);
+
+   // if (dir_list.at(0) == ""){
+   //    DEBUGF('c', "changing directory from root");
+   //    if (path_exists(dir_list, state.get_root())){
+   //       destination = get_path_from_root(dir_list);
+   //    } else {
+   //     cout << "error: directory "+ path + " does not exist" << endl;
+   //       return;
+   //    }
+   // } else if (dir_list.at(0) == ".."){
+   //    wordvec full_path = get_path
+   // }
+
+
+
+   destination = find_inode(path, state);
+   state.set_cwd(destination);
 
    DEBUGF ('c', state);
    DEBUGF ('c', words);

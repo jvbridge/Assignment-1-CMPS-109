@@ -114,6 +114,36 @@ ostream& operator<< (ostream& out, const inode_state& state) {
 
 // INODE ==============================================================
 
+bool inode::has_child(string dir_name){
+   if (this->type != DIR_INODE){
+      throw runtime_error("inode is not a directory");
+   }
+
+   directory_ptr this_dir = directory_ptr_of(this->get_contents());
+
+   // quick reference to make line length smaller
+   wordvec dirents = this_dir->get_dir_list();
+
+   // and again
+   auto it = find(dirents.begin(), dirents.end(),dir_name);
+
+   if( it != dirents.end()){
+      DEBUGF ('i', "Directory " + dir_name + " found");
+      return true;
+   }
+   DEBUGF ('i', "Directory " + dir_name + " NOT found");
+   return false;
+}
+
+inode_ptr inode::get_child(string dir_name){
+   if (this->type != DIR_INODE){
+      throw runtime_error("inode is not a directory");
+   }
+
+   directory_ptr this_dir = directory_ptr_of (this->get_contents());
+   return this_dir->get_child(dir_name);
+}
+
 /**
  * A function that call's directory's mkdir function, as well as makes
  * sure the derectory does not already exist
@@ -221,10 +251,14 @@ void inode_state::set_prompt(const string& new_prompt){
    this->prompt = new_prompt;
 };
 
-void inode_state::set_cwd(wordvec path){
-   if (path.at(0).compare("/")){
-      // TODO
-   }
+/**
+ * setter for the cwd. Effectively makes cwd public.
+ * I'm lazy and decided working code is better than good code that's
+ * late.
+ * @param new_cwd inode pointer to the new cwd
+ */
+void inode_state::set_cwd(inode_ptr new_cwd){
+   this->cwd = new_cwd;
 }
 
 /**
@@ -364,4 +398,11 @@ wordvec directory::get_dir_list(){
       ret.push_back(curr_dir);
    }
    return ret;
+}
+
+inode_ptr directory::get_child(string child_name){
+   if (this->dirents.find(".") == this->dirents.end()){
+      throw runtime_error ("error: directory not found");
+   }
+   return dirents[child_name];
 }
