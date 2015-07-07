@@ -49,14 +49,19 @@ class inode_state {
 
       // MY FUNCTIONS =================================================
 
+      bool has_child();
+
       // setters
       void set_prompt(const string& new_prompt);
+      void set_cwd(wordvec path);
 
       // getters
       const string& get_prompt();
       inode_ptr get_cwd();
       inode_ptr get_root();
       string get_path();
+
+      wordvec get_dir_list(inode_ptr dir);
 };
 
 
@@ -96,6 +101,13 @@ class inode {
       string get_name();
       inode_ptr get_parent();
       file_base_ptr get_contents();
+      inode_t get_type();
+
+      // directory specific
+      inode_ptr make_directory(string& directory_name);
+      wordvec get_dir_list();
+
+      // plain file specific
 };
 
 //
@@ -170,13 +182,13 @@ class directory: public file_base {
    public:
       size_t size() const override;
       void remove (const string& filename);
-      inode& mkdir (const string& dirname);
+      inode_ptr mkdir (const string& dirname);
       inode& mkfile (const string& filename);
       // my functions
       void set_dotdot(inode_ptr parent);
       void set_dot(inode_ptr dot);
       bool has(const string& name);
-
+      wordvec get_dir_list();
 };
 
 #endif

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 using namespace std;
 
@@ -82,6 +83,16 @@ inode_state::inode_state() {
    // the constructor
    this->root->parent = this->root;
 
+   inode_ptr root_parent = this->root;
+
+   // get reference to the directory contents
+   directory_ptr root_dir_ptr;
+   root_dir_ptr = directory_ptr_of(this->root->get_contents());
+
+   // set the dot and dotdot entries
+   root_dir_ptr->set_dot(this->root);
+   root_dir_ptr->set_dotdot(this->root);
+
    // set the current working directory to be the root
    this->cwd = root;
 
@@ -94,12 +105,51 @@ ostream& operator<< (ostream& out, const inode_state& state) {
        << ", cwd = " << state.cwd;
    return out;
 }
-
+// ====================================================================
 // MY FUNCTIONS =======================================================
-// INODE
+// ====================================================================
+
+// HELPER =============================================================
+
+
+// INODE ==============================================================
 
 /**
- * Returnt the contents of the inode
+ * A function that call's directory's mkdir function, as well as makes
+ * sure the derectory does not already exist
+ * @param directory_name [description]
+ */
+inode_ptr inode::make_directory(string& directory_name){
+   directory_ptr dir_ptr = directory_ptr_of(this->get_contents());
+
+   if (dir_ptr->has(directory_name)){
+      cout << "error: directory " + directory_name + "already exists" <<
+      endl;
+      //return this;
+      // TODO error handling
+   }
+   return dir_ptr->mkdir(directory_name);
+}
+
+/**
+ * A function that gets the directory list of this inode
+ * @param  dir an inode pointer that is of type DIR_INODE
+ * @return     a wordvec of all the names of the sub directories
+ */
+wordvec inode::get_dir_list(){
+
+   if (this->get_type() != DIR_INODE){
+      throw runtime_error("this inode is not a directory");
+   }
+
+   directory_ptr dir_ptr = directory_ptr_of(this->get_contents());
+
+   return dir_ptr->get_dir_list();
+}
+
+
+/**
+ * Return the contents of the inode
  * @return file_base_ptr refering to the contents
  */
 file_base_ptr inode::get_contents(){
@@ -153,6 +203,14 @@ inode_ptr inode::get_parent(){
    return this->parent;
 }
 
+/**
+ * getter for the type of the inode
+ * @return inode_t of the inode type
+ */
+inode_t inode::get_type(){
+   return this->type;
+}
+
 // INODE state ========================================================
 /**
  * setter for the shell's prompt
@@ -162,6 +220,12 @@ inode_ptr inode::get_parent(){
 void inode_state::set_prompt(const string& new_prompt){
    this->prompt = new_prompt;
 };
+
+void inode_state::set_cwd(wordvec path){
+   if (path.at(0).compare("/")){
+      // TODO
+   }
+}
 
 /**
  * getter for the shell's prompt
@@ -198,8 +262,10 @@ inode_ptr inode_state::get_root(){
  */
 string inode_state::get_path(){
    DEBUGF('i', "getting path from cwd");
-   return this->cwd->get_path(*this); // TODO: ask why * is required
+   return this->cwd->get_path(*this);
 }
+
+
 
 // directory ==========================================================
 
@@ -209,13 +275,13 @@ string inode_state::get_path(){
  * @param  dirname the name of the new directory
  * @return          a reference to the new directorie's inode
  */
-inode& directory::mkdir(const string& name){
+inode_ptr directory::mkdir(const string& name){
    // check if it has the name
    if (this->has(name)){
-      cout << "Error: " + name + "already exists" << endl;
+      cout << "Error: " + name + " already exists" << endl;
       auto pair = this->dirents.find(name);
-      inode* ret = pair->second.get();
-      return *ret; // TODO Ask why
+      inode_ptr ret = pair->second;
+      return ret;
    }
 
    // get a reference for the parent
@@ -233,8 +299,11 @@ inode& directory::mkdir(const string& name){
    // set the ".." entry
    new_directory->set_dotdot(dir_parent);
 
+   //pair<string, inode_ptr> new_entry = std::make_pair(name, new_dir);
+   this->dirents[name] = new_dir;
+
    // return the finished directory
-   return *new_dir; // TODO ask why star!
+   return new_dir; // TODO ask why star!
 }
 
 /**
@@ -268,10 +337,31 @@ void directory::set_dot(inode_ptr dot){
    }
 }
 
+/**
+ * Function that checks if the directory has a child named the argument
+ * given
+ * @param  name name of the direcotry
+ * @return      true if it is exists, false otherwise.
+ */
 bool directory::has(const string& name){
    if (dirents.find(name) == dirents.end()){
       // there is no directory of that name.
       return false;
    }
    return true;
+}
+
+/**
+ * a getter that returns the list of children of the directory
+ * @return wordvec with all the names of the children of the directory
+ */
+wordvec directory::get_dir_list(){
+   wordvec ret;
+   for (auto it = this->dirents.begin(); it != this->dirents.end();
+      it++ ){
+      string curr_dir = it->first;
+      DEBUGF('i', "gettind dir" << curr_dir);
+      ret.push_back(curr_dir);
+   }
+   return ret;
 }

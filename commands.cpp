@@ -74,16 +74,58 @@ wordvec parse_path(string path){
    return ret;
 }
 
-/**
- * Helper function that returns if the directory exists
- * @param  curr_dir       [description]
- * @param  path_from_curr [description]
- * @return                [description]
- */
-bool directory_exists(inode_ptr& curr_dir, string path_from_curr){
-   wordvec dir_path = parse_path(path_from_curr);
+// /**
+//  * helper function that returns true if the
+//  * @param  path wordvec of the directories, should start at root
+//  * @return      [description]
+//  */
+// bool dir_exists(wordvec path){
+//
+// }
+//
+// /**
+//  * [get_dir description]
+//  * @param  path [description]
+//  * @return      [description]
+//  */
+// bool get_dir(wordvec path){
+//
+// }
 
-   return false;
+/**
+ * Helper function that returns a wordvec of the complete path to the
+ * root
+ * @param  node  [the node that the path is from]
+ * @param  root  [a poine to the root]
+ * @return       [wordvec  that is the root]
+ */
+wordvec get_path_from_root(inode_ptr node, inode_ptr root){
+   wordvec ret;
+   inode_ptr curr = node;
+
+   while(curr != root){
+      ret.insert(ret.begin(), curr->get_name());
+      curr = curr->get_parent();
+   }
+   ret.insert(ret.begin(), "");
+   return ret;
+}
+
+/**
+ * helper function that returns true if the dir has, false if it
+ * does not
+ * @param  path A string representing a path
+ * @return      true if the directory has a child named the name given
+ * false otherwise
+ */
+bool dir_has_child(inode_ptr dir, string name){
+   // TODO
+   //
+
+   inode_ptr warning_ender = dir;
+   string warning_stopper = name;
+
+   return true;
 }
 
 /**
@@ -98,37 +140,88 @@ void make_directory(string path, inode_state& state){
 
    // parse the directories into a word vector
    wordvec dirs = parse_path(path);
+
    DEBUGF ('c', "dirs is " << dirs);
 
-   // if the path begins with a slash, we need a top level directory
+   // getting the level which the path refers to using a bunch
+   // of else if statements since C++ doesn't support switches
+   // on strings
+
+   // if the first character is "/" that means that we are
+   // making a directory at the root level
    if (path.find("/") == 0){
       curr_level = state.get_root();
-      DEBUGF ('c', "top level is root");
-      // the first entry is an empty string to signify root. Pop it off
-      // to prevent logic errors
+      DEBUGF ('d', "top level is root");
+      // the first entry is an empty string to signify root.
+      // Pop it off to prevent logic errors
       dirs.erase(dirs.begin());
-   } else {
-      curr_level = state.get_cwd();
-      DEBUGF ('c', "top level is cwd");
-   }
+      // note that this doesn't return here
+   } else if (path.find("..") == 0){
+      // TODO test
+      curr_level = state.get_cwd()->get_parent();
+      DEBUGF('d', "Making direcotry at parent level");
 
-   // check if directory already exists
-   if (directory_exists(curr_level, path)){
-      cout << "Error: path " << path << " already exists" << endl;
+      wordvec full_path =
+         get_path_from_root(curr_level, state.get_root());
+
+      DEBUGF ('d', "get path from root: " << full_path);
+
+      if (dirs.size() > 2) {
+         cout << "error: multiple dirs not supported" << endl;
+         return;
+      }
+      curr_level->make_directory(dirs.at(1));
       return;
+   } else if (path.find(".") == 0){
+
+      // works the same as the end event
+      DEBUGF('d', "Making direcotry at current level (\".\")");
+      curr_level = state.get_cwd();
+
+      // if there are multiple directories in the path, escape while
+      if (dirs.size() > 2) {
+         cout << "error: multiple dirs not supported" << endl;
+         return;
+      }
+
+      // make the directory and return
+      curr_level->make_directory(dirs.at(1));
+      return;
+   } else {
+      DEBUGF('d', "Making direcotry at current level (else)");
+      curr_level = state.get_cwd();
+
+      wordvec full_path =
+         get_path_from_root(curr_level, state.get_root());
+
+      DEBUGF ('d', "get path from root: " << full_path);
+
+      if (dirs.size() > 1) {
+         cout << "error: multiple dirs not supported" << endl;
+         return;
+      }
+
+      DEBUGF ('d', "dirs size is: " << dirs.size());
+      string dirname = dirs.front();
+      DEBUGF ('d', "Dirname is: " << dirname);
+      curr_level->make_directory(dirname);
    }
 
    // iterate through the paths and make the directories
    for(auto it = dirs.begin(); it < dirs.end(); it++){
+      // check if exists
+      // if (directory_exists(curr_level, path)){
+      //    cout << "Error: path " << path << " already exists" << endl;
+      //    return;
+      // }
 
-      // make the directory with make shared
-      inode_ptr new_dir = make_shared<inode>(DIR_INODE,
-          *it, curr_level);
-      curr_level = new_dir;
+
+      // make the directory with inode's function
+      inode_ptr new_dir = curr_level->make_directory(*it);
+      DEBUGF('c', "Made directory: " << *it);
+      curr_level = new_dir; // TODO test
    }
 }
-
-
 
 command_fn commands::at (const string& cmd) {
    // Note: value_type is pair<const key_type, mapped_type>
@@ -166,6 +259,27 @@ void fn_cat (inode_state& state, const wordvec& words){
 }
 
 void fn_cd (inode_state& state, const wordvec& words){
+   // Error handling
+   switch (pop_command(words).size()){
+      case 0:
+         cout << "Error, cd needs at least one argument" << endl;
+         return;
+      case 2:
+         cout << "Error, cd needs can only take one argument" << endl;
+         return;
+      default: break;
+   }
+
+   // pop off the command to manipulate the string
+   string path = pop_command(words).at(0);
+
+   // parse the path with helper function
+   wordvec dir_list = parse_path(path);
+
+   // set the current directory to the parsed path by handing the
+   // function off to inode.cpp
+   state.set_cwd(dir_list);
+
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 }
@@ -218,6 +332,14 @@ void fn_exit (inode_state& state, const wordvec& words){
 }
 
 void fn_ls (inode_state& state, const wordvec& words){
+
+
+   wordvec dir_list = state.get_cwd()->get_dir_list();
+
+   for(auto it = dir_list.begin(); it != dir_list.end(); it++){
+      cout << *it << endl;
+   }
+
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 }
@@ -237,7 +359,7 @@ void fn_mkdir (inode_state& state, const wordvec& words){
 
    // if there are no arguments return an error.
    if (words.size() == 1){
-      cout << "mkdir: missing operand" << endl;
+      cout << "yshell: missing operand" << endl;
       return;
    }
 
@@ -247,9 +369,6 @@ void fn_mkdir (inode_state& state, const wordvec& words){
    // iterate over directories given and hand off the work to the
    // helper functions
    for (auto it = dirs.begin(); it != dirs.end(); it++){
-
-      // check if the path already exists TODO
-
       // actually make the directory with the helper function
       make_directory(*it, state);
    }
