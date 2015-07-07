@@ -284,7 +284,6 @@ void make_directory(string path, inode_state& state){
       dirs.erase(dirs.begin());
       // note that this doesn't return here
    } else if (path.find("..") == 0){
-      // TODO test
       curr_level = state.get_cwd()->get_parent();
       DEBUGF('d', "Making direcotry at parent level");
 
@@ -332,6 +331,7 @@ void make_directory(string path, inode_state& state){
       string dirname = dirs.front();
       DEBUGF ('d', "Dirname is: " << dirname);
       curr_level->make_directory(dirname);
+      return;
    }
 
    // iterate through the paths and make the directories
@@ -342,13 +342,14 @@ void make_directory(string path, inode_state& state){
       //    return;
       // }
 
-
+      DEBUGF('h', "making directory:" <<  *it);
       // make the directory with inode's function
       inode_ptr new_dir = curr_level->make_directory(*it);
       DEBUGF('c', "Made directory: " << *it);
       curr_level = new_dir; // TODO test
    }
 }
+
 
 command_fn commands::at (const string& cmd) {
    // Note: value_type is pair<const key_type, mapped_type>
@@ -410,7 +411,7 @@ void fn_cd (inode_state& state, const wordvec& words){
       destination = find_inode(path, state);
       state.set_cwd(destination);
    }  else{
-      cout << "error: directory" + path + "doesn't exist" << endl;
+      cout << "error: directory " + path + " doesn't exist" << endl;
    }
 
    DEBUGF ('c', state);
@@ -466,26 +467,78 @@ void fn_exit (inode_state& state, const wordvec& words){
 
 void fn_ls (inode_state& state, const wordvec& words){
 
-
-   wordvec dir_list = state.get_cwd()->get_dir_list();
-
-   for(auto it = dir_list.begin(); it != dir_list.end(); it++){
-      cout << *it << endl;
-   }
-
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   if (words.size() == 1){
+      state.get_cwd()->list();
+      return;
+   }
+
+   wordvec paths = pop_command(words);
+
+   for (auto it = paths.begin(); it < paths.end(); it++){
+      // get the full path of the state
+      wordvec full_path = get_full_path(*it, state);
+
+      if (full_path_exists(full_path, state.get_root())){
+         inode_ptr list_dir = find_inode( *it, state);
+         list_dir->list();
+      } else{
+         cout << "error: " << *it << " does not exist" << endl;
+      }
+   }
 }
 
 void fn_lsr (inode_state& state, const wordvec& words){
+
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   if (words.size() == 1){
+      state.get_cwd()->list_recursive();
+      return;
+   }
+
+   wordvec paths = pop_command(words);
+
+   for (auto it = paths.begin(); it < paths.end(); it++){
+      // get the full path of the state
+      wordvec full_path = get_full_path(*it, state);
+
+      if (full_path_exists(full_path, state.get_root())){
+         inode_ptr start = find_inode( *it, state);
+         start->list_recursive();
+      } else{
+         cout << "error: " << *it << " does not exist" << endl;
+      }
+   }
 }
 
 
 void fn_make (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   if (words.size() == 1){
+      cout << "Error: make needs arguments" << endl;
+      return;
+   }
+
+   wordvec paths = pop_command(words);
+
+   for (auto it = paths.begin(); it < paths.end(); it++){
+      // get the full path of the state
+      wordvec full_path = get_full_path(*it, state);
+
+      if (full_path_exists(full_path, state.get_root())){
+         inode_ptr start = find_inode( *it, state);
+         //start->list_recursive();
+      } else{
+         cout << "error: " << *it << " does not exist" << endl;
+      }
+   }
+
 }
 
 void fn_mkdir (inode_state& state, const wordvec& words){

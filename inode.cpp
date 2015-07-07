@@ -114,6 +114,54 @@ ostream& operator<< (ostream& out, const inode_state& state) {
 
 // INODE ==============================================================
 
+void inode::list(){
+   if (this->type != DIR_INODE){
+      return;
+   }
+   directory_ptr dir_ptr = directory_ptr_of(this->get_contents());
+   dir_ptr->list();
+}
+
+string digit_length(int number){
+   string ret;
+   if (number < 10){
+      ret = "     ";
+   } else if (number < 100){
+      ret = "    ";
+   } else if (number < 1000){
+      ret = "   ";
+   } else if (number < 10000){
+      ret = "  ";
+   } else if (number < 100000){
+      ret = " ";
+   } else{
+      ret = "";
+   }
+   ret = to_string(number) + ret;
+   return ret;
+}
+
+string inode::list_info(){
+   string ret;
+
+   string number = digit_length(this->inode_nr);
+   string size = digit_length(this->get_size());
+
+   ret = number + "   " + size + " " + this->name;
+   return ret;
+
+}
+
+void inode::list_recursive(){
+   if (this->type != DIR_INODE){
+      return;
+   }
+   directory_ptr dir_ptr = directory_ptr_of(this->get_contents());
+
+   dir_ptr->list_recursive();
+   dir_ptr->list();
+}
+
 bool inode::has_child(string dir_name){
    if (this->type != DIR_INODE){
       throw runtime_error("inode is not a directory");
@@ -135,6 +183,19 @@ bool inode::has_child(string dir_name){
    return false;
 }
 
+int inode::get_size(){
+   if (this->type == DIR_INODE){
+      directory_ptr this_dir = directory_ptr_of(this->get_contents());
+      return this_dir->get_dir_list().size() - 2;
+   }
+
+   if (this->type == PLAIN_INODE){
+      return 1;
+   }
+
+   return 0;
+}
+
 inode_ptr inode::get_child(string dir_name){
    if (this->type != DIR_INODE){
       throw runtime_error("inode is not a directory");
@@ -152,9 +213,11 @@ inode_ptr inode::get_child(string dir_name){
 inode_ptr inode::make_directory(string& directory_name){
    directory_ptr dir_ptr = directory_ptr_of(this->get_contents());
 
+   DEBUGF ('h', "inode's make directory called");
+
    if (dir_ptr->has(directory_name)){
-      cout << "error: directory " + directory_name + "already exists" <<
-      endl;
+      cout << "error: directory " << directory_name << " already exists"
+      << endl;
       //return this;
       // TODO error handling
    }
@@ -310,6 +373,8 @@ string inode_state::get_path(){
  * @return          a reference to the new directorie's inode
  */
 inode_ptr directory::mkdir(const string& name){
+
+   DEBUGF('h', "mkdir called");
    // check if it has the name
    if (this->has(name)){
       cout << "Error: " + name + " already exists" << endl;
@@ -378,11 +443,21 @@ void directory::set_dot(inode_ptr dot){
  * @return      true if it is exists, false otherwise.
  */
 bool directory::has(const string& name){
-   if (dirents.find(name) == dirents.end()){
+   wordvec dirlist = this->get_dir_list();
+   DEBUGF('h', "name: " + name);
+   DEBUGF('h', "dirlist: " << dirlist);
+
+   auto it = find(dirlist.begin(), dirlist.end(), name);
+
+   if (it == dirlist.end()){
+      DEBUGF('h', "not found!");
       // there is no directory of that name.
       return false;
+   } else{
+      DEBUGF('h', "Found!");
+      return true;
    }
-   return true;
+
 }
 
 /**
@@ -405,4 +480,40 @@ inode_ptr directory::get_child(string child_name){
       throw runtime_error ("error: directory not found");
    }
    return dirents[child_name];
+}
+
+void directory::list(){
+   auto entries = this->dirents;
+
+   inode_ptr this_dir = this->dirents["."];
+   inode_ptr this_parent = this->dirents[".."];
+
+   cout << "inode_nr size   filename" << endl;
+
+   for (auto it = entries.begin(); it != entries.end(); it++){
+      // check if the current directory is the . or ..
+      inode_ptr curr_dir = it->second;
+      if (curr_dir == this_dir || curr_dir == this_parent){
+         continue;
+      }
+      cout << curr_dir->list_info() << endl;
+   }
+}
+
+void directory::list_recursive(){
+
+   auto entries = this->dirents;
+
+   inode_ptr this_dir = this->dirents["."];
+   inode_ptr this_parent = this->dirents[".."];
+
+   for (auto it = entries.begin(); it != entries.end(); it++){
+
+      inode_ptr curr_dir = it->second;
+
+      if (curr_dir == this_dir || curr_dir == this_parent){
+         continue;
+      }
+      it->second->list_recursive();
+   }
 }

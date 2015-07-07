@@ -102,12 +102,16 @@ class inode {
       inode_ptr get_parent();
       file_base_ptr get_contents();
       inode_t get_type();
+      int get_size();
 
       // directory specific
       inode_ptr make_directory(string& directory_name);
       wordvec get_dir_list();
       bool has_child(string dir_name);
       inode_ptr get_child(string dir_name);
+      void list_recursive();
+      void list();
+      string list_info();
 
       // plain file specific
 };
@@ -192,6 +196,8 @@ class directory: public file_base {
       bool has(const string& name);
       wordvec get_dir_list();
       inode_ptr get_child(string child_name);
+      void list_recursive();
+      void list();
 };
 
 #endif
