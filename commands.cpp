@@ -404,25 +404,14 @@ void fn_cd (inode_state& state, const wordvec& words){
    wordvec dir_list = parse_path(path);
 
    inode_ptr destination;
-   // set the current directory to the parsed path by handing the
-   // function off to inode.cpp
 
-   // if (dir_list.at(0) == ""){
-   //    DEBUGF('c', "changing directory from root");
-   //    if (path_exists(dir_list, state.get_root())){
-   //       destination = get_path_from_root(dir_list);
-   //    } else {
-   //     cout << "error: directory "+ path + " does not exist" << endl;
-   //       return;
-   //    }
-   // } else if (dir_list.at(0) == ".."){
-   //    wordvec full_path = get_path
-   // }
-
-
-
-   destination = find_inode(path, state);
-   state.set_cwd(destination);
+   wordvec full_path = get_full_path(path, state);
+   if (full_path_exists(full_path, state.get_root())){
+      destination = find_inode(path, state);
+      state.set_cwd(destination);
+   }  else{
+      cout << "error: directory" + path + "doesn't exist" << endl;
+   }
 
    DEBUGF ('c', state);
    DEBUGF ('c', words);
